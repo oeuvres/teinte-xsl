@@ -867,21 +867,23 @@ Tables
   <!-- table  -->
   <xsl:template match="tei:table">
     <xsl:param name="from"/>
-    <table>
-      <xsl:call-template name="atts">
-        <xsl:with-param name="rend">
-          <xsl:choose>
-            <xsl:when test="@rend">
-              <xsl:value-of select="@rend"/>
-            </xsl:when>
-            <xsl:otherwise>table</xsl:otherwise>
-          </xsl:choose>
-        </xsl:with-param>
-      </xsl:call-template>
-      <xsl:apply-templates>
-        <xsl:with-param name="from" select="$from"/>
-      </xsl:apply-templates>
-    </table>
+    <div class="table-container">
+      <table>
+        <xsl:call-template name="atts">
+          <xsl:with-param name="rend">
+            <xsl:choose>
+              <xsl:when test="@rend">
+                <xsl:value-of select="@rend"/>
+              </xsl:when>
+              <xsl:otherwise>table</xsl:otherwise>
+            </xsl:choose>
+          </xsl:with-param>
+        </xsl:call-template>
+        <xsl:apply-templates>
+          <xsl:with-param name="from" select="$from"/>
+        </xsl:apply-templates>
+      </table>
+    </div>
   </xsl:template>
   <xsl:template match="tei:table/tei:head">
     <xsl:param name="from"/>

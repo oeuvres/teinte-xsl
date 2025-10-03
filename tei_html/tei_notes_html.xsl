@@ -359,34 +359,8 @@ BSD-3-Clause https://opensource.org/licenses/BSD-3-Clause
       <!-- Should be a footnote. Because of <number> syntax, there are repetitions -->
       <xsl:otherwise>
         <xsl:choose>
-          <!-- Full document -->
-          <xsl:when test="not($split)">
-            <xsl:choose>
-              <xsl:when test="$hasformat">
-                <xsl:number count="tei:note[@rend=$hasformat]" format="{@rend}" from="tei:text" level="any"/>
-              </xsl:when>
-              <xsl:when test="@type='app'">
-                <xsl:number count="tei:note[@type='app']" format="I" from="tei:text" level="any"/>
-              </xsl:when>
-              <xsl:when test="@resp='editor'">
-                <xsl:number count="tei:note[@resp=$resp]" format="a" from="tei:text" level="any"/>
-              </xsl:when>
-              <xsl:when test="@resp">
-                <xsl:number count="tei:note[@resp=$resp]" from="tei:text" level="any"/>
-              </xsl:when>
-              <xsl:otherwise>
-                <xsl:number count="tei:note[
-                  not(@resp) 
-                  and not(@rend) 
-                  and not(@place='margin') 
-                  and not(parent::tei:div) 
-                  and not(parent::tei:notesStmt)
-                 ]" from="tei:text" level="any"/>
-              </xsl:otherwise>
-            </xsl:choose>
-          </xsl:when>
           <!-- Inside a split section, start numerotation from container -->
-          <xsl:when test="ancestor::*[@type = 'chapter']">
+          <xsl:when test="$split and ancestor::*[@type = 'chapter']">
             <xsl:choose>
               <xsl:when test="$hasformat">
                 <xsl:number count="tei:note[@rend=$hasformat]" format="{@rend}" from="tei:*[@type = 'chapter']" level="any"/>
@@ -411,20 +385,20 @@ BSD-3-Clause https://opensource.org/licenses/BSD-3-Clause
               </xsl:otherwise>
             </xsl:choose>
           </xsl:when>
-          <!-- Introductive part containing chapters  -->
+          <!-- Default, full document -->
           <xsl:otherwise>
             <xsl:choose>
               <xsl:when test="$hasformat">
-                <xsl:number count="tei:note[@rend=$hasformat]" format="{@rend}" from="tei:div[parent::tei:body] | tei:front | tei:back" level="any"/>
+                <xsl:number count="tei:note[@rend=$hasformat]" format="{@rend}" from="tei:text" level="any"/>
               </xsl:when>
               <xsl:when test="@type='app'">
-                <xsl:number count="tei:note[@type='app']" format="I" from="tei:div[parent::tei:body] | tei:front | tei:back" level="any"/>
+                <xsl:number count="tei:note[@type='app']" format="I" from="tei:text" level="any"/>
               </xsl:when>
               <xsl:when test="@resp='editor'">
-                <xsl:number count="tei:note[@resp=$resp]" format="a" from="tei:div[parent::tei:body] | tei:front | tei:back" level="any"/>
+                <xsl:number count="tei:note[@resp=$resp]" format="a" from="tei:text" level="any"/>
               </xsl:when>
               <xsl:when test="@resp">
-                <xsl:number count="tei:note[@resp=$resp]" from="tei:div[parent::tei:body] | tei:front | tei:back" level="any"/>
+                <xsl:number count="tei:note[@resp=$resp]" from="tei:text" level="any"/>
               </xsl:when>
               <xsl:otherwise>
                 <xsl:number count="tei:note[
@@ -433,7 +407,7 @@ BSD-3-Clause https://opensource.org/licenses/BSD-3-Clause
                   and not(@place='margin') 
                   and not(parent::tei:div) 
                   and not(parent::tei:notesStmt)
-                 ]" from="tei:div[parent::tei:body] | tei:front | tei:back" level="any"/>
+                 ]" from="tei:text" level="any"/>
               </xsl:otherwise>
             </xsl:choose>
           </xsl:otherwise>
