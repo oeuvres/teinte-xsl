@@ -295,7 +295,9 @@ Sections
           <xsl:with-param name="rend">
             <xsl:value-of select="@rend"/>
             <xsl:if test="$verse"> verse </xsl:if>
-            <xsl:value-of select="../@type"/>
+            <xsl:if test="../@type != ''">
+              <xsl:value-of select="concat(../@type, '-head')"/>
+            </xsl:if>
           </xsl:with-param>
         </xsl:call-template>
         <xsl:attribute name="id">
