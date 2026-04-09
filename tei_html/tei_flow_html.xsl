@@ -185,25 +185,13 @@ Sections
       "/>
     <xsl:choose>
       <!-- opener play the role of header -->
-      <xsl:when test="$tei[self::tei:opener]">
+      <xsl:when test="$tei[self::tei:opener] or not($first)">
         <xsl:apply-templates select="$tei">
           <xsl:with-param name="level" select="$level"/>
           <xsl:with-param name="from" select="$from"/>
         </xsl:apply-templates>
       </xsl:when>
-      <!-- Candidates for section title -->
-      <xsl:when test="$first and 
-        $first/preceding-sibling::*[
-           self::tei:argument 
-        or self::tei:byline 
-        or self::tei:dateline
-        or self::tei:docAuthor
-        or self::tei:docDate
-        or self::tei:epigraph
-        or self::tei:head
-        or self::tei:salute
-        or self::tei:signed
-        ]">
+      <xsl:otherwise>
         <header>
           <xsl:apply-templates select="$first/preceding-sibling::node()">
             <xsl:with-param name="level" select="$level"/>
@@ -216,12 +204,6 @@ Sections
             <xsl:with-param name="from" select="$from"/>
           </xsl:apply-templates>
         </div>
-      </xsl:when>
-      <xsl:otherwise>
-        <xsl:apply-templates select="$tei">
-          <xsl:with-param name="level" select="$level"/>
-          <xsl:with-param name="from" select="$from"/>
-        </xsl:apply-templates>
       </xsl:otherwise>
     </xsl:choose>
   </xsl:template>
@@ -2224,6 +2206,58 @@ Elements block or inline level
           <xsl:with-param name="from" select="$from"/>
         </xsl:call-template>
       </xsl:otherwise>
+    </xsl:choose>
+  </xsl:template>
+  
+  <xsl:template match="*" mode="byline">
+    <xsl:message>
+      <xsl:value-of select="name()"/>
+      <xsl:text> not implemeted for mode="byline"</xsl:text>
+    </xsl:message>
+  </xsl:template>
+  
+  <xsl:template match="tei:biblStruct" mode="byline">
+    <xsl:choose>
+      <xsl:when test="tei:analytic">
+        <xsl:for-each select="tei:analytic/tei:editor 
+            | tei:analytic/tei:author">
+          <xsl:apply-templates select="."/>
+          <xsl:choose>
+            <xsl:when test="position() = last()"/>
+            <xsl:otherwise>, </xsl:otherwise>
+          </xsl:choose>
+        </xsl:for-each>
+      </xsl:when>
+      <xsl:when test="tei:monogr">
+        <xsl:for-each select="tei:monogr/tei:editor 
+            | tei:monogr/tei:author">
+          <xsl:apply-templates select="."/>
+          <xsl:choose>
+            <xsl:when test="position() = last()"/>
+            <xsl:otherwise>, </xsl:otherwise>
+          </xsl:choose>
+        </xsl:for-each>
+      </xsl:when>
+    </xsl:choose>
+  </xsl:template>
+
+  <xsl:template match="tei:biblStruct" mode="year">
+    <xsl:variable name="year">
+      <xsl:choose>
+        <xsl:when test="tei:analytic/tei:date">
+          <xsl:apply-templates mode="year" select="tei:analytic/tei:date"/>
+        </xsl:when>
+        <xsl:when test="tei:monogr/tei:imprint/tei:date">
+          <xsl:apply-templates mode="year" select="tei:monogr/tei:imprint/tei:date"/>
+        </xsl:when>
+      </xsl:choose>
+    </xsl:variable>
+    <xsl:choose>
+      <xsl:when test="$year != ''">
+        <xsl:text>(</xsl:text>
+        <xsl:value-of select="$year"/>
+        <xsl:text>)</xsl:text>
+      </xsl:when>
     </xsl:choose>
   </xsl:template>
   <!--
