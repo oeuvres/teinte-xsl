@@ -47,7 +47,7 @@ Sections
         <xsl:value-of select="@ident"/>
         <xsl:text>&gt;</xsl:text>
       </h1>
-      <xsl:apply-templates select="*">
+      <xsl:apply-templates select="node()">
         <xsl:with-param name="from" select="$from"/>
       </xsl:apply-templates>
     </article>
@@ -57,7 +57,7 @@ Sections
     <xsl:param name="level" select="count(ancestor::tei:group)"/>
     <section>
       <xsl:call-template name="atts"/>
-      <xsl:apply-templates select="*">
+      <xsl:apply-templates select="node()">
         <xsl:with-param name="level" select="$level"/>
         <xsl:with-param name="from" select="$from"/>
       </xsl:apply-templates>
@@ -72,7 +72,7 @@ Sections
       <xsl:otherwise>
         <section>
           <xsl:call-template name="atts"/>
-          <xsl:apply-templates select="*">
+          <xsl:apply-templates select="node()">
             <xsl:with-param name="level" select="$level "/>
             <xsl:with-param name="from" select="$from"/>
           </xsl:apply-templates>
@@ -155,7 +155,7 @@ Sections
         <!-- hard page break ? -->
         <xsl:otherwise/>
       </xsl:choose>
-      <xsl:apply-templates select="*">
+      <xsl:apply-templates select="node()">
         <xsl:with-param name="level" select="$level + 1"/>
         <xsl:with-param name="from" select="$from"/>
       </xsl:apply-templates>
@@ -165,14 +165,17 @@ Sections
   Sections, group opening infos in a <header> element
   -->
   <xsl:template name="div-header">
-    <xsl:param name="level"/>
+    <xsl:param name="level" select="1"/>
     <xsl:param name="from"/>
     <xsl:param name="tei" select="node()"/>
     <xsl:variable name="first" select="
-      ($tei[not(self::tei:argument)]
+      ($tei
+      [not(self::text())]
+      [not(self::tei:argument)]
       [not(self::tei:byline)]
       [not(self::tei:cb)]
       [not(self::tei:dateline)]
+      [not(self::tei:div)]
       [not(self::tei:docAuthor)]
       [not(self::tei:docDate)]
       [not(self::tei:epigraph)]
@@ -185,11 +188,25 @@ Sections
       "/>
     <xsl:choose>
       <!-- opener play the role of header -->
-      <xsl:when test="$tei[self::tei:opener] or not($first)">
-        <xsl:apply-templates select="$tei">
+      <xsl:when test="$tei[self::tei:opener]">
+        <xsl:apply-templates select="$tei/tei:opener">
           <xsl:with-param name="level" select="$level"/>
           <xsl:with-param name="from" select="$from"/>
         </xsl:apply-templates>
+        <div class="body">
+          <xsl:apply-templates select="$tei">
+            <xsl:with-param name="level" select="$level"/>
+            <xsl:with-param name="from" select="$from"/>
+          </xsl:apply-templates>
+        </div>
+      </xsl:when>
+      <xsl:when test="not($first)">
+        <div class="body">
+          <xsl:apply-templates select="$tei">
+            <xsl:with-param name="level" select="$level"/>
+            <xsl:with-param name="from" select="$from"/>
+          </xsl:apply-templates>
+        </div>
       </xsl:when>
       <xsl:otherwise>
         <header>
@@ -1147,7 +1164,15 @@ Tables
           </xsl:apply-templates>
         </span>
       </xsl:when>
-      <xsl:when test="contains($rend, 'initial') or starts-with($rend, 'over') or starts-with($rend, 'sc') or starts-with($rend, 'under')">
+      <xsl:when test="starts-with($rend, 'sc')">
+        <span>
+          <xsl:call-template name="atts"/>
+          <xsl:apply-templates>
+            <xsl:with-param name="from" select="$from"/>
+          </xsl:apply-templates>
+        </span>
+      </xsl:when>
+      <xsl:when test="contains($rend, 'initial') or starts-with($rend, 'over') or starts-with($rend, 'under')">
         <span>
           <xsl:call-template name="atts"/>
           <xsl:apply-templates>
@@ -2254,9 +2279,11 @@ Elements block or inline level
     </xsl:variable>
     <xsl:choose>
       <xsl:when test="$year != ''">
-        <xsl:text>(</xsl:text>
-        <xsl:value-of select="$year"/>
-        <xsl:text>)</xsl:text>
+        <time class="year">
+          <xsl:text>(</xsl:text>
+          <xsl:value-of select="$year"/>
+          <xsl:text>)</xsl:text>
+        </time>
       </xsl:when>
     </xsl:choose>
   </xsl:template>
