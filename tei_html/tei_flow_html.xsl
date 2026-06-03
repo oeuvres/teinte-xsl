@@ -2366,6 +2366,193 @@ Elements block or inline level
       </xsl:otherwise>
     </xsl:choose>
   </xsl:template>
+  
+  <!-- Entry point. Apply with mode="citation" on a tei:biblStruct from inside
+       the page <head> to emit its Highwire citation_* block. -->
+  <xsl:template match="tei:biblStruct" mode="citation">
+    <xsl:variable name="title"
+      select="tei:analytic/tei:title | tei:monogr/tei:title[@level='m']"/>
+    <xsl:variable name="container"
+      select="tei:monogr/tei:title[@level='j'] | tei:monogr/tei:title[@level='m']"/>
+    <xsl:variable name="lang"
+      select="tei:analytic/@xml:lang | tei:monogr/@xml:lang"/>
+    <xsl:variable name="url">
+      <xsl:choose>
+        <xsl:when test=".//tei:ptr/@target">
+          <xsl:value-of select="(.//tei:ptr/@target)[1]"/>
+        </xsl:when>
+        <xsl:otherwise>
+          <xsl:value-of
+            select="concat('https://unige.ch/piaget/', .//tei:idno[@type='callNumber'])"/>
+        </xsl:otherwise>
+      </xsl:choose>
+    </xsl:variable>
+    
+    <xsl:call-template name="meta">
+      <xsl:with-param name="name" select="'citation_title'"/>
+      <xsl:with-param name="content" select="$title"/>
+    </xsl:call-template>
+    
+    <xsl:choose>
+      <xsl:when test="tei:analytic/tei:author">
+        <xsl:apply-templates select="tei:analytic/tei:author" mode="citation"/>
+      </xsl:when>
+      <xsl:otherwise>
+        <xsl:apply-templates select="tei:monogr/tei:author" mode="citation"/>
+      </xsl:otherwise>
+    </xsl:choose>
+    
+    <xsl:call-template name="meta">
+      <xsl:with-param name="name" select="'citation_publication_date'"/>
+      <xsl:with-param name="content" select="tei:monogr/tei:imprint/tei:date/@when"/>
+    </xsl:call-template>
+    
+    <xsl:choose>
+      <xsl:when test="@type = 'book' or @type = 'report'"/>
+      <xsl:when test="@type = 'conferencePaper'">
+        <xsl:call-template name="meta">
+          <xsl:with-param name="name" select="'citation_conference_title'"/>
+          <xsl:with-param name="content" select="$container"/>
+        </xsl:call-template>
+      </xsl:when>
+      <xsl:when test="@type = 'bookSection' or @type = 'encyclopediaArticle'">
+        <xsl:call-template name="meta">
+          <xsl:with-param name="name" select="'citation_inbook_title'"/>
+          <xsl:with-param name="content" select="$container"/>
+        </xsl:call-template>
+      </xsl:when>
+      <xsl:otherwise>
+        <xsl:call-template name="meta">
+          <xsl:with-param name="name" select="'citation_journal_title'"/>
+          <xsl:with-param name="content" select="$container"/>
+        </xsl:call-template>
+      </xsl:otherwise>
+    </xsl:choose>
+    
+    <xsl:call-template name="meta">
+      <xsl:with-param name="name" select="'citation_volume'"/>
+      <xsl:with-param name="content"
+        select="tei:monogr/tei:imprint/tei:biblScope[@unit='volume']"/>
+    </xsl:call-template>
+    <xsl:call-template name="meta">
+      <xsl:with-param name="name" select="'citation_issue'"/>
+      <xsl:with-param name="content"
+        select="tei:monogr/tei:imprint/tei:biblScope[@unit='issue']"/>
+    </xsl:call-template>
+    <xsl:if test="tei:monogr/tei:imprint/tei:biblScope[@unit='page']">
+      <xsl:call-template name="citation-pages">
+        <xsl:with-param name="pages"
+          select="tei:monogr/tei:imprint/tei:biblScope[@unit='page']"/>
+      </xsl:call-template>
+    </xsl:if>
+    
+    <xsl:call-template name="meta">
+      <xsl:with-param name="name" select="'citation_publisher'"/>
+      <xsl:with-param name="content" select="tei:monogr/tei:imprint/tei:publisher"/>
+    </xsl:call-template>
+    <xsl:call-template name="meta">
+      <xsl:with-param name="name" select="'citation_isbn'"/>
+      <xsl:with-param name="content" select=".//tei:idno[@type='ISBN']"/>
+    </xsl:call-template>
+    <xsl:call-template name="meta">
+      <xsl:with-param name="name" select="'citation_issn'"/>
+      <xsl:with-param name="content" select=".//tei:idno[@type='ISSN']"/>
+    </xsl:call-template>
+    <xsl:call-template name="meta">
+      <xsl:with-param name="name" select="'citation_doi'"/>
+      <xsl:with-param name="content" select=".//tei:idno[@type='DOI']"/>
+    </xsl:call-template>
+    <xsl:call-template name="meta">
+      <xsl:with-param name="name" select="'citation_language'"/>
+      <xsl:with-param name="content" select="$lang"/>
+    </xsl:call-template>
+    <xsl:call-template name="meta">
+      <xsl:with-param name="name" select="'citation_fulltext_html_url'"/>
+      <xsl:with-param name="content" select="$url"/>
+    </xsl:call-template>
+  </xsl:template>
+  
+  <!-- Returns the substring following the last occurrence of $delim. -->
+  <xsl:template name="after-last">
+    <xsl:param name="string"/>
+    <xsl:param name="delim"/>
+    <xsl:choose>
+      <xsl:when test="contains($string, $delim)">
+        <xsl:call-template name="after-last">
+          <xsl:with-param name="string" select="substring-after($string, $delim)"/>
+          <xsl:with-param name="delim" select="$delim"/>
+        </xsl:call-template>
+      </xsl:when>
+      <xsl:otherwise>
+        <xsl:value-of select="$string"/>
+      </xsl:otherwise>
+    </xsl:choose>
+  </xsl:template>
+  
+  <!-- Emits citation_firstpage, plus citation_lastpage when a range is present.
+       Copes with a single page ("36"), a range ("311-332") and multi-segment
+       values ("30-32, 40, 46-47", from which it takes 30 and 47). -->
+  <xsl:template name="citation-pages">
+    <xsl:param name="pages"/>
+    <xsl:variable name="p" select="normalize-space($pages)"/>
+    <xsl:variable name="first">
+      <xsl:choose>
+        <xsl:when test="contains($p, '-')">
+          <xsl:value-of select="normalize-space(substring-before($p, '-'))"/>
+        </xsl:when>
+        <xsl:when test="contains($p, ',')">
+          <xsl:value-of select="normalize-space(substring-before($p, ','))"/>
+        </xsl:when>
+        <xsl:otherwise>
+          <xsl:value-of select="$p"/>
+        </xsl:otherwise>
+      </xsl:choose>
+    </xsl:variable>
+    <xsl:call-template name="meta">
+      <xsl:with-param name="name" select="'citation_firstpage'"/>
+      <xsl:with-param name="content" select="$first"/>
+    </xsl:call-template>
+    <xsl:if test="contains($p, '-')">
+      <xsl:variable name="last">
+        <xsl:call-template name="after-last">
+          <xsl:with-param name="string" select="$p"/>
+          <xsl:with-param name="delim" select="'-'"/>
+        </xsl:call-template>
+      </xsl:variable>
+      <xsl:call-template name="meta">
+        <xsl:with-param name="name" select="'citation_lastpage'"/>
+        <xsl:with-param name="content" select="$last"/>
+      </xsl:call-template>
+    </xsl:if>
+  </xsl:template>
+  
+  <!-- Writes one <meta name=… content=…/>, but only when the normalised content
+       is non-empty, so absent fields (ISSN, DOI, most volumes…) yield no tag. -->
+  <xsl:template name="meta">
+    <xsl:param name="name"/>
+    <xsl:param name="content"/>
+    <xsl:if test="normalize-space($content) != ''">
+      <meta name="{$name}" content="{normalize-space($content)}"/>
+    </xsl:if>
+  </xsl:template>
+  
+  <!-- One citation_author per TEI author, formatted "Surname, Forename".
+       respStmt contributors and translators are deliberately not emitted. -->
+  <xsl:template match="tei:author" mode="citation">
+    <xsl:call-template name="meta">
+      <xsl:with-param name="name" select="'citation_author'"/>
+      <xsl:with-param name="content">
+        <xsl:choose>
+          <xsl:when test="tei:forename">
+            <xsl:value-of select="concat(tei:surname, ', ', tei:forename)"/>
+          </xsl:when>
+          <xsl:otherwise>
+            <xsl:value-of select="tei:surname"/>
+          </xsl:otherwise>
+        </xsl:choose>
+      </xsl:with-param>
+    </xsl:call-template>
+  </xsl:template>
   <!--
 Attributes
 
