@@ -1167,6 +1167,7 @@ Tables
       <xsl:when test="starts-with($rend, 'sc')">
         <span>
           <xsl:call-template name="atts"/>
+          <xsl:attribute name="style">font-variant:small-caps;</xsl:attribute>
           <xsl:apply-templates>
             <xsl:with-param name="from" select="$from"/>
           </xsl:apply-templates>
@@ -2335,6 +2336,9 @@ Elements block or inline level
           <xsl:attribute name="id">
             <xsl:call-template name="id"/>
           </xsl:attribute>
+          <xsl:if test="self::tei:surname">
+            <xsl:attribute name="style">font-variant:small-caps;</xsl:attribute>
+          </xsl:if>
           <xsl:apply-templates>
             <xsl:with-param name="from" select="$from"/>
           </xsl:apply-templates>
@@ -2361,6 +2365,9 @@ Elements block or inline level
               <xsl:value-of select="@rend"/>
             </xsl:with-param>
           </xsl:call-template>
+          <xsl:if test="self::tei:surname">
+            <xsl:attribute name="style">font-variant:small-caps;</xsl:attribute>
+          </xsl:if>
           <xsl:apply-templates/>
         </span>
       </xsl:otherwise>
