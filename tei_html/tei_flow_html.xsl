@@ -2600,6 +2600,14 @@ Centralize some html attribute policy, especially for id, and class
     <!-- Process other know attributes -->
     <xsl:apply-templates select="@*"/>
   </xsl:template>
+  
+  <xsl:template match="@ana">
+    <xsl:choose>
+      <xsl:when test="contains(., 'nosnippet')">
+        <xsl:attribute name="data-nosnippet"/>
+      </xsl:when>
+    </xsl:choose>
+  </xsl:template>
   <!-- Provide automatic classes from TEI names -->
   <xsl:template name="class">
     <xsl:param name="rend" select="@rend"/>
