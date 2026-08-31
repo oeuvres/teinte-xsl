@@ -1280,7 +1280,7 @@ Tables
   </xsl:template>
   <!-- Page break in titlePage, something to do, don't know what for now -->
   <xsl:template match="tei:titlePage/tei:pb"/>
-  <!-- Page break, add a space, hyphenation supposed to be resolved -->
+  <!-- Page break, outside the DOM flow to not pertubate searching -->
   <xsl:template match="tei:pb" name="pb">
     <xsl:variable name="norm" select="normalize-space(@n)"/>
     <xsl:variable name="text">
@@ -1322,7 +1322,7 @@ Tables
         <xsl:if test="$mixed != ''">
           <xsl:value-of select="$lf"/>
         </xsl:if>
-        <a class="{normalize-space($class)}" role="doc-pagebreak" aria-hidden="true" tabindex="-1">
+        <a class="{normalize-space($class)}" role="doc-pagebreak" data-n="{@n}" aria-label="{$text}">
           <xsl:choose>
             <!-- @xml:base ? -->
             <xsl:when test="@facs">
@@ -1350,7 +1350,7 @@ Tables
             <xsl:attribute name="onclick">if(window.pb) pb(this, '<xsl:value-of select="$docid"/>', '<xsl:value-of select="@n"/>');</xsl:attribute>
           </xsl:if>
           -->
-          <xsl:value-of select="$text"/>
+          <xsl:value-of select="' '"/>
         </a>
       </xsl:otherwise>
     </xsl:choose>
@@ -2235,38 +2235,6 @@ Elements block or inline level
     </xsl:choose>
   </xsl:template>
   
-  <xsl:template match="*" mode="byline">
-    <xsl:message>
-      <xsl:value-of select="name()"/>
-      <xsl:text> not implemeted for mode="byline"</xsl:text>
-    </xsl:message>
-  </xsl:template>
-  
-  <xsl:template match="tei:biblStruct" mode="byline">
-    <xsl:choose>
-      <xsl:when test="tei:analytic">
-        <xsl:for-each select="tei:analytic/tei:editor 
-            | tei:analytic/tei:author">
-          <xsl:apply-templates select="."/>
-          <xsl:choose>
-            <xsl:when test="position() = last()"/>
-            <xsl:otherwise>, </xsl:otherwise>
-          </xsl:choose>
-        </xsl:for-each>
-      </xsl:when>
-      <xsl:when test="tei:monogr">
-        <xsl:for-each select="tei:monogr/tei:editor 
-            | tei:monogr/tei:author">
-          <xsl:apply-templates select="."/>
-          <xsl:choose>
-            <xsl:when test="position() = last()"/>
-            <xsl:otherwise>, </xsl:otherwise>
-          </xsl:choose>
-        </xsl:for-each>
-      </xsl:when>
-    </xsl:choose>
-  </xsl:template>
-
   <xsl:template match="tei:biblStruct" mode="year">
     <xsl:variable name="year">
       <xsl:choose>
@@ -2601,13 +2569,6 @@ Centralize some html attribute policy, especially for id, and class
     <xsl:apply-templates select="@*"/>
   </xsl:template>
   
-  <xsl:template match="@ana">
-    <xsl:choose>
-      <xsl:when test="contains(., 'nosnippet')">
-        <xsl:attribute name="data-nosnippet"/>
-      </xsl:when>
-    </xsl:choose>
-  </xsl:template>
   <!-- Provide automatic classes from TEI names -->
   <xsl:template name="class">
     <xsl:param name="rend" select="@rend"/>
@@ -2710,9 +2671,16 @@ Centralize some html attribute policy, especially for id, and class
   </xsl:template>
   <!-- @nana -->
   <xsl:template match="@ana">
-    <xsl:attribute name="data-key">
-      <xsl:value-of select="."/>
-    </xsl:attribute>
+    <xsl:choose>
+      <xsl:when test="contains(., 'nosnippet')">
+        <xsl:attribute name="data-nosnippet"/>
+      </xsl:when>
+      <xsl:otherwise>
+	    <xsl:attribute name="data-key">
+	      <xsl:value-of select="."/>
+	    </xsl:attribute>
+      </xsl:otherwise>
+    </xsl:choose>
   </xsl:template>
   <!-- @type -->
   <xsl:template match="@type">

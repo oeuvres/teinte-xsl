@@ -16,11 +16,14 @@ BSD-3-Clause https://opensource.org/licenses/BSD-3-Clause
   xmlns="http://www.w3.org/1999/xhtml" xmlns:tei="http://www.tei-c.org/ns/1.0"
   exclude-result-prefixes="tei">
   <xsl:import href="../tei_common.xsl"/>
+  <xsl:output indent="yes" encoding="UTF-8" method="html" omit-xml-declaration="yes"/>
 
   <!-- Generate a relative tree, for example in a section -->
   <xsl:template name="tocrel">
     <xsl:variable name="html">
-      <xsl:apply-templates select="*" mode="li"/>
+      <xsl:apply-templates select="*" mode="li">
+        <xsl:with-param name="level" select="0"/>
+      </xsl:apply-templates>
     </xsl:variable>
     <xsl:if test="$html != ''">
       <ol class="tree">
@@ -35,15 +38,19 @@ BSD-3-Clause https://opensource.org/licenses/BSD-3-Clause
     <xsl:variable name="html">
       <xsl:apply-templates select="/*/tei:text/tei:front" mode="li">
         <xsl:with-param name="localid" select="generate-id()"/>
+        <xsl:with-param name="level" select="0"/>
       </xsl:apply-templates>
       <xsl:apply-templates select="/*/tei:text/tei:body" mode="li">
         <xsl:with-param name="localid" select="generate-id()"/>
+        <xsl:with-param name="level" select="0"/>
       </xsl:apply-templates>
       <xsl:apply-templates select="/*/tei:text/tei:group" mode="li">
         <xsl:with-param name="localid" select="generate-id()"/>
+        <xsl:with-param name="level" select="0"/>
       </xsl:apply-templates>
       <xsl:apply-templates select="/*/tei:text/tei:back" mode="li">
         <xsl:with-param name="localid" select="generate-id()"/>
+        <xsl:with-param name="level" select="0"/>
       </xsl:apply-templates>
     </xsl:variable>
     <xsl:if test="$html != ''">
@@ -130,6 +137,7 @@ BSD-3-Clause https://opensource.org/licenses/BSD-3-Clause
 
   <xsl:template match="*" mode="toclocal"/>
   <xsl:template match="tei:div" mode="toclocal">
+    <xsl:param name="level"/>
     <xsl:param name="localid"/>
     <xsl:variable name="generate-id" select="generate-id()"/>
     <!--  -->
@@ -153,6 +161,9 @@ BSD-3-Clause https://opensource.org/licenses/BSD-3-Clause
       </xsl:choose>
     </xsl:variable>
     <xsl:variable name="children" select="tei:castList | tei:div | tei:titlePage"/>
+    <xsl:call-template name="toc-indent">
+      <xsl:with-param name="level" select="$level"/>
+    </xsl:call-template>
     <li>
       <xsl:attribute name="class">
         <xsl:text>toc-item </xsl:text>
@@ -353,6 +364,10 @@ BSD-3-Clause https://opensource.org/licenses/BSD-3-Clause
   <!-- default, stop -->
   <xsl:template match="node()" mode="li"/>
   <xsl:template match="tei:castList" mode="li">
+    <xsl:param name="level"/>
+    <xsl:call-template name="toc-indent">
+      <xsl:with-param name="level" select="$level"/>
+    </xsl:call-template>
     <li class="toc-item">
       <xsl:call-template name="a"/>
     </li>
@@ -360,14 +375,15 @@ BSD-3-Clause https://opensource.org/licenses/BSD-3-Clause
 
   <xsl:template match="tei:back | tei:body | tei:front" mode="li">
     <xsl:param name="class">tree</xsl:param>
-    <!-- un truc pour pouvoir maintenir ouvert des niveaux de table des matières -->
     <xsl:param name="less" select="0"/>
-    <!-- limit depth -->
-    <xsl:param name="depth"/>
+    <xsl:param name="level"/>
     <xsl:variable name="children" select="tei:group | tei:text | tei:div 
       | tei:div0 | tei:div1 | tei:div2 | tei:div3 | tei:div4 | tei:div5 | tei:div6 | tei:div7 "/>
     <xsl:choose>
       <xsl:when test="count($children) = 1">
+        <xsl:call-template name="toc-indent">
+          <xsl:with-param name="level" select="$level"/>
+        </xsl:call-template>
         <li class="toc-item">
           <xsl:variable name="title">
             <xsl:call-template name="title"/>
@@ -388,17 +404,25 @@ BSD-3-Clause https://opensource.org/licenses/BSD-3-Clause
       </xsl:when>
       <xsl:when test="count($children) &gt; 0">
         <xsl:apply-templates select="tei:group | tei:text | tei:div 
-      | tei:div0 | tei:div1" mode="li"/>
+      | tei:div0 | tei:div1" mode="li">
+          <xsl:with-param name="level" select="number($level) + 1"/>
+        </xsl:apply-templates>
       </xsl:when>
       <!-- body without parts, do nothing ? castList ? titlePage ? -->
       <xsl:when test="self::tei:body"/>
       <!-- simple content ? -->
       <xsl:when test="not(tei:castList | tei:div | tei:div1)">
+        <xsl:call-template name="toc-indent">
+          <xsl:with-param name="level" select="$level"/>
+        </xsl:call-template>
         <li class="toc-item">
           <xsl:call-template name="a"/>
         </li>
       </xsl:when>
       <xsl:when test="self::tei:front or self::tei:back">
+        <xsl:call-template name="toc-indent">
+          <xsl:with-param name="level" select="$level"/>
+        </xsl:call-template>
         <li class="toc-item has-children {local-name()}">
           <span>
             <xsl:call-template name="title"/>
@@ -409,7 +433,9 @@ BSD-3-Clause https://opensource.org/licenses/BSD-3-Clause
                 <!-- ??? first section with no title, no forged title -->
                 <xsl:when test="self::div and position() = 1 and not(tei:head) and ../tei:head "/>
                 <xsl:otherwise>
-                  <xsl:apply-templates select="." mode="li"/>
+                  <xsl:apply-templates select="." mode="li">
+                    <xsl:with-param name="level" select="number($level) + 1"/>
+                  </xsl:apply-templates>
                 </xsl:otherwise>
               </xsl:choose>
             </xsl:for-each>
@@ -418,11 +444,17 @@ BSD-3-Clause https://opensource.org/licenses/BSD-3-Clause
       </xsl:when>
       <!-- div content -->
       <xsl:otherwise>
-        <xsl:apply-templates select="tei:castList | tei:div | tei:div1 | tei:titlePage" mode="li"/>
+        <xsl:apply-templates select="tei:castList | tei:div | tei:div1 | tei:titlePage" mode="li">
+          <xsl:with-param name="level" select="number($level) + 1"/>
+        </xsl:apply-templates>
       </xsl:otherwise>
     </xsl:choose>
   </xsl:template>
   <xsl:template match="tei:group/tei:text" mode="li">
+    <xsl:param name="level"/>
+    <xsl:call-template name="toc-indent">
+      <xsl:with-param name="level" select="$level"/>
+    </xsl:call-template>
     <li class="toc-item has-children">
       <xsl:call-template name="a"/>
       <xsl:choose>
@@ -431,9 +463,15 @@ BSD-3-Clause https://opensource.org/licenses/BSD-3-Clause
           test="not(tei:front|tei:back) and tei:body/tei:p | tei:body/tei:l | tei:body/tei:list | tei:body/tei:argument | tei:body/tei:table | tei:body/tei:docTitle | tei:body/tei:docAuthor"/>
         <xsl:otherwise>
           <ol>
-            <xsl:apply-templates select="tei:front" mode="li"/>
-            <xsl:apply-templates select="tei:body" mode="li"/>
-            <xsl:apply-templates select="tei:back" mode="li"/>
+            <xsl:apply-templates select="tei:front" mode="li">
+              <xsl:with-param name="level" select="number($level) + 1"/>
+            </xsl:apply-templates>
+            <xsl:apply-templates select="tei:body" mode="li">
+              <xsl:with-param name="level" select="number($level) + 1"/>
+            </xsl:apply-templates>
+            <xsl:apply-templates select="tei:back" mode="li">
+              <xsl:with-param name="level" select="number($level) + 1"/>
+            </xsl:apply-templates>
           </ol>
         </xsl:otherwise>
       </xsl:choose>
@@ -446,19 +484,19 @@ BSD-3-Clause https://opensource.org/licenses/BSD-3-Clause
     <xsl:param name="class"/>
     <!-- un truc pour pouvoir maintenir ouvert des niveaux de table des matières -->
     <xsl:param name="less" select="0"/>
-    <!-- limit depth -->
-    <xsl:param name="depth"/>
+    <xsl:param name="level"/>
     <!-- Children? Should head requested for a toc ? -->
     <xsl:variable name="children" select="tei:group | tei:text | tei:div 
       | tei:div0[tei:head] | tei:div1[tei:head] | tei:div2[tei:head] | tei:div3[tei:head] | tei:div4[tei:head] | tei:div5[tei:head] | tei:div6[tei:head] | tei:div7[tei:head] "/>
+    <xsl:call-template name="toc-indent">
+      <xsl:with-param name="level" select="$level"/>
+    </xsl:call-template>
     <li>
       <xsl:attribute name="class">
         <xsl:text>toc-item</xsl:text>
         <xsl:choose>
           <!-- last level -->
           <xsl:when test="count($children) &lt; 1"/>
-          <!-- let open -->
-          <xsl:when test="number($depth) &lt; 2"/>
           <xsl:when test="number($less) &gt; 0"> has-children</xsl:when>
           <xsl:otherwise> has-children</xsl:otherwise>
         </xsl:choose>
@@ -480,7 +518,7 @@ BSD-3-Clause https://opensource.org/licenses/BSD-3-Clause
                 <xsl:otherwise>
                   <xsl:apply-templates select="." mode="li">
                     <xsl:with-param name="less" select="number($less) - 1"/>
-                    <xsl:with-param name="depth" select="number($depth) - 1"/>
+                    <xsl:with-param name="level" select="number($level) + 1"/>
                     <xsl:with-param name="class"/>
                   </xsl:apply-templates>
                 </xsl:otherwise>
@@ -511,6 +549,7 @@ BSD-3-Clause https://opensource.org/licenses/BSD-3-Clause
     </xsl:for-each>
   </xsl:template>
   <xsl:template name="paratoc">
+    <xsl:param name="level"/>
     <xsl:choose>
       <xsl:when
         test="tei:p | tei:l | tei:list | tei:argument | tei:table | tei:docTitle | tei:docAuthor">
@@ -519,7 +558,9 @@ BSD-3-Clause https://opensource.org/licenses/BSD-3-Clause
       <!-- if empty <div>, let it be -->
       <xsl:when test="tei:div|tei:div1">
         <ol class="tree">
-          <xsl:apply-templates select="self::tei:div|self::tei:div1" mode="li"/>
+          <xsl:apply-templates select="self::tei:div|self::tei:div1" mode="li">
+            <xsl:with-param name="level" select="number($level) + 1"/>
+          </xsl:apply-templates>
         </ol>
       </xsl:when>
     </xsl:choose>
@@ -585,6 +626,12 @@ Dégager une ligne biliographique d'un élément, avec des enregistrements bibli
     <em class="title">
       <xsl:apply-templates/>
     </em>
+  </xsl:template>
+  
+  <xsl:template name="toc-indent">
+    <xsl:param name="level"/>
+    <xsl:text>&#10;</xsl:text>
+    <xsl:value-of select="substring('                    ', 1, $level * 2)"/>
   </xsl:template>
 
 </xsl:transform>

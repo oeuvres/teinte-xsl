@@ -27,8 +27,8 @@ TODO: listes, tables, liens
   <xsl:import href="../tei_common.xsl"/>
   <xsl:output omit-xml-declaration="yes" encoding="UTF-8" method="text" indent="yes"/>
   <!-- Permet l'indentation des éléments de structure -->
-  <xsl:strip-space elements="tei:TEI tei:TEI.2 tei:body tei:castList  tei:div tei:div1 tei:div2  tei:docDate tei:docImprint tei:docTitle tei:fileDesc tei:front tei:group tei:index tei:listWit tei:publicationStmp tei:publicationStmt tei:sourceDesc tei:SourceDesc tei:sources tei:text tei:teiHeader tei:text tei:titleStmt"/>
-  <xsl:preserve-space elements="tei:l tei:p tei:s "/>
+  <xsl:strip-space elements="tei:TEI tei:TEI.2 tei:body tei:castList  tei:div tei:div1 tei:div2  tei:docDate tei:docImprint tei:docTitle tei:fileDesc tei:front tei:group tei:index tei:listWit tei:publicationStmp tei:publicationStmt tei:q tei:sourceDesc tei:SourceDesc tei:sources tei:text tei:teiHeader tei:text tei:titleStmt"/>
+  <xsl:preserve-space elements="tei:cell tei:head tei:item tei:l tei:note tei:p tei:quote tei:s tei:seg"/>
   <xsl:variable name="lf">
     <xsl:text>&#10;</xsl:text>
   </xsl:variable>
@@ -99,27 +99,26 @@ TODO: listes, tables, liens
     <xsl:apply-templates mode="md"/>
   </xsl:template>
   <xsl:template match="tei:figure" mode="md"/>
-  <xsl:template match="tei:castList | tei:list | tei:listBibl">
-    <xsl:value-of select="$lf"/>
+  <xsl:template match="tei:castList | tei:list | tei:listBibl" mode="md">
     <xsl:value-of select="$lf"/>
     <xsl:apply-templates select="*" mode="md"/>
     <xsl:value-of select="$lf"/>
   </xsl:template>
   <xsl:template match="tei:castItem" mode="md">
-    <xsl:value-of select="$lf"/>
     <xsl:text> – </xsl:text>
     <xsl:variable name="text">
       <xsl:apply-templates mode="md"/>
     </xsl:variable>
     <xsl:value-of select="normalize-space($text)"/>
+    <xsl:value-of select="$lf"/>
   </xsl:template>
   <xsl:template match="tei:item" mode="md">
-    <xsl:value-of select="$lf"/>
     <xsl:text> * </xsl:text>
     <xsl:variable name="text">
       <xsl:apply-templates mode="md"/>
     </xsl:variable>
     <xsl:value-of select="normalize-space($text)"/>
+    <xsl:value-of select="$lf"/>
   </xsl:template>
 
   <xsl:template match="tei:bibl | tei:cit" mode="md">
@@ -161,13 +160,13 @@ TODO: listes, tables, liens
         <xsl:apply-templates mode="md"/>
       </xsl:when>
       <xsl:when test="tei:p|tei:l">
-        <xsl:value-of select="$lf"/>
         <xsl:apply-templates select="*" mode="md"/>
       </xsl:when>
       <xsl:otherwise>
         <xsl:value-of select="$lf"/>
         <xsl:text>    </xsl:text>
         <xsl:apply-templates mode="md"/>
+        <xsl:value-of select="$lf"/>
       </xsl:otherwise>
     </xsl:choose>
   </xsl:template> 
@@ -193,8 +192,8 @@ TODO: listes, tables, liens
 
   <xsl:template match="tei:sp" mode="md">
     <xsl:value-of select="$lf"/>
-    <xsl:value-of select="$lf"/>
     <xsl:apply-templates select="*" mode="md"/>
+    <xsl:value-of select="$lf"/>
   </xsl:template>
   <xsl:template match="tei:speaker" mode="md">
     <xsl:text>    </xsl:text>
@@ -280,7 +279,6 @@ TODO: listes, tables, liens
     <xsl:variable name="txt">
       <xsl:apply-templates mode="md"/>
     </xsl:variable>
-    <xsl:value-of select="$lf"/>
     <xsl:choose>
       <xsl:when test="@part = 'm' or @part = 'M'">    </xsl:when>
       <xsl:when test="@part = 'f' or @part = 'F'">        </xsl:when>
@@ -295,6 +293,7 @@ TODO: listes, tables, liens
       </xsl:when>
     </xsl:choose>
     -->
+    <xsl:value-of select="$lf"/>
   </xsl:template>
   <xsl:template match="tei:lg" mode="md">
     <!-- verses on one line
@@ -309,6 +308,7 @@ TODO: listes, tables, liens
     -->
     <xsl:value-of select="$lf"/>
     <xsl:apply-templates select="*" mode="md"/>
+    <xsl:value-of select="$lf"/>
   </xsl:template>
   <xsl:template match="tei:byline" mode="md">
     <xsl:variable name="txt">
@@ -342,10 +342,10 @@ TODO: listes, tables, liens
       <xsl:apply-templates mode="md"/>
     </xsl:variable>
     <xsl:value-of select="$lf"/>
-    <xsl:value-of select="$lf"/>
     <xsl:text>&lt;</xsl:text>
     <xsl:value-of select="normalize-space($txt)"/>
     <xsl:text>&gt;</xsl:text>
+    <xsl:value-of select="$lf"/>
   </xsl:template>  
   <xsl:template match="tei:p" mode="md">
     <xsl:variable name="txt">
@@ -363,7 +363,6 @@ TODO: listes, tables, liens
       </xsl:when>
       <xsl:otherwise>
         <xsl:value-of select="$lf"/>
-        <xsl:copy-of select="$lf"/>
       </xsl:otherwise>
     </xsl:choose>
     <!--
@@ -372,6 +371,7 @@ TODO: listes, tables, liens
     </xsl:call-template>
     -->
     <xsl:value-of select="normalize-space($txt)"/>
+    <xsl:copy-of select="$lf"/>
   </xsl:template>
 
   <xsl:template match="tei:lb" mode="md">
@@ -465,37 +465,23 @@ TODO: listes, tables, liens
     </xsl:variable>
     <xsl:value-of select="$lf"/>
     <xsl:value-of select="$lf"/>
-    <xsl:value-of select="$lf"/>
     <xsl:value-of select="substring('######', 1, $level)"/>
     <xsl:text> </xsl:text>
     <xsl:variable name="head" select="normalize-space($text)"/>
     <xsl:value-of select="$head"/>
     <xsl:variable name="last" select="substring($head, string-length($head))"/>
     <xsl:if test="$last != '.' and $last != '?' and $last != '!' and $last != '…'">.</xsl:if>
+    <xsl:value-of select="$lf"/>
   </xsl:template>
 
   
   <!-- Intertitre -->
   <xsl:template match="tei:label" mode="md">
-    <xsl:choose>
-      <xsl:when test="parent::tei:div">
-        <xsl:value-of select="$lf"/>
-        <xsl:value-of select="$lf"/>
-        <xsl:text>**</xsl:text>
-        <xsl:value-of select="normalize-space(.)"/>
-        <xsl:text>**</xsl:text>
-        <xsl:value-of select="$lf"/>
-      </xsl:when>
-      <xsl:otherwise>
-        <xsl:text>**</xsl:text>
-        <xsl:value-of select="normalize-space(.)"/>
-        <xsl:text>**</xsl:text>
-      </xsl:otherwise>
-    </xsl:choose>
-
-    <xsl:text>**</xsl:text>
+    <xsl:value-of select="$lf"/>
+    <xsl:text>** </xsl:text>
     <xsl:value-of select="normalize-space(.)"/>
-    <xsl:text>**</xsl:text>
+    <xsl:text> **</xsl:text>
+    <xsl:value-of select="$lf"/>
   </xsl:template> 
 
   <!-- Rétablissement de césure -->
