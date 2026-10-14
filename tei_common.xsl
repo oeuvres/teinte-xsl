@@ -954,7 +954,6 @@ Could be correct for a text only version in <xsl:value-of select=""/>
   <!-- find a title for a section  -->
   <xsl:template match="tei:back | tei:body | tei:div | tei:div0 | tei:div1 | tei:div2 | tei:div3 | tei:div4 | tei:div5 | tei:div6 | tei:div7 | tei:front | tei:group | tei:TEI | tei:text | tei:titlePage" mode="title" name="title">
     <!-- Author in a title ? -->
-    <!-- Numérotation construite (?) -->
     <xsl:choose>
       <!-- Short title, not displayed -->
       <xsl:when test="tei:index[@indexName='head'][@n != '']">
@@ -1212,19 +1211,42 @@ Could be correct for a text only version in <xsl:value-of select=""/>
     <xsl:text> </xsl:text>
   </xsl:template>
   <xsl:template match="text()" mode="title">
-    <xsl:variable name="text" select="translate(., '', '')"/>
-    <xsl:if test="translate(substring($text, 1,1), concat(' ', $lf, $cr, $tab), '') = ''">
-      <xsl:text> </xsl:text>
-    </xsl:if>
-    <xsl:value-of select="normalize-space($text)"/>
+    <xsl:variable name="haspreceding" select="preceding-sibling::*[not(self::tei:note)][not(self::tei:index)]"/>
+    <xsl:variable name="hasfollowing" select="following-sibling::*[not(self::tei:note)][not(self::tei:index)]"/>
+    <xsl:variable name="text" select="."/>
+    <xsl:variable name="spaces" select="concat(' ', $lf, $cr, $tab)"/>
     <xsl:choose>
-      <xsl:when test="following-sibling::node()[1][self::tei:lb]"/>
-      <!--
-      <xsl:when test="ancestor::tei:head and count(.|ancestor::tei:head/node()[position() = last()])"/>
-      -->
-      <xsl:when test="translate(substring($text, string-length($text)), concat(' ', $lf, $cr, $tab), '') = ''">
-        <xsl:text> </xsl:text>
+      <!-- has content -->
+      <xsl:when test="normalize-space(.) != ''">
+        <!-- starts by some spaces ? -->
+        <xsl:choose>
+          <xsl:when test="not(contains($spaces, substring($text, 1,1)))"/>
+          <xsl:when test="preceding-sibling::*[1][self::tei:lb]"/>
+          <xsl:when test="not($haspreceding)"/>
+          <!-- <hi rend="i">Journal</hi> d’André Gide -->
+          <xsl:otherwise>
+            <xsl:text> </xsl:text>
+         </xsl:otherwise>
+        </xsl:choose>
+        <!-- normalize-space -->
+        <xsl:value-of select="normalize-space($text)"/>
+        <!-- ends by some spaces ? -->
+        <xsl:choose>
+          <xsl:when test="not(contains($spaces, substring($text, string-length($text))))"/>
+          <xsl:when test="following-sibling::*[1][self::tei:lb]"/>
+          <xsl:when test="not($hasfollowing)"/>
+          <xsl:otherwise>
+            <xsl:text> </xsl:text>
+          </xsl:otherwise>
+        </xsl:choose>
       </xsl:when>
+      <!-- Avoid trailing spaces -->
+      <xsl:when test="not($hasfollowing)"/>
+      <xsl:when test="not($haspreceding)"/>
+      <xsl:when test="following-sibling::*[1][self::tei:lb]"/>
+      <xsl:otherwise>
+        <xsl:text> </xsl:text>
+      </xsl:otherwise>
     </xsl:choose>
   </xsl:template>
   
@@ -1318,7 +1340,6 @@ Could be correct for a text only version in <xsl:value-of select=""/>
         -->
       </xsl:otherwise>
     </xsl:choose>
-    <xsl:text> </xsl:text>
   </xsl:template>
   <xsl:template match="tei:choice" mode="title">
     <xsl:choose>
